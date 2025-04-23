@@ -1,7 +1,7 @@
 numpy==2.2.4
 Pillow==11.1.0
 torch==2.6.0
-torchvision==0.21.0
+torchvision==0.22.0
 urllib3==2.3.0
 pandas==2.2.3
 reverse-geocode==1.6.5
