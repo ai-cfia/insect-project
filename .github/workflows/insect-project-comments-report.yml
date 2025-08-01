@@ -1,0 +1,29 @@
+name: Insect Project Comments Report
+
+on:
+  schedule:
+    - cron: '0 13 * * 1'  # Run at 1:00 PM UTC on Mondays (9:00 AM Eastern Time UTC-4)
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  comments-report:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Run Insect Project Comments Report
+      run: |
+        docker run --rm \
+          -e ENVIRONMENT="${{ secrets.ENVIRONMENT }}" \
+          -e SENDER_EMAIL="${{ secrets.SENDER_EMAIL }}" \
+          -e SENDER_NAME="${{ secrets.SENDER_NAME }}" \
+          -e SMTP_DEBUG_LEVEL="${{ secrets.SMTP_DEBUG_LEVEL }}" \
+          -e SMTP_HOST="${{ secrets.SMTP_HOST }}" \
+          -e SMTP_PASSWORD="${{ secrets.SMTP_PASSWORD }}" \
+          -e SMTP_PORT="${{ secrets.SMTP_PORT }}" \
+          -e SMTP_USERNAME="${{ secrets.SMTP_USERNAME }}" \
+          -e COMMENTS_EMAIL_RECIPIENTS="${{ secrets.COMMENTS_EMAIL_RECIPIENTS }}" \
+          -e _COMMENTS_EMAIL_RECIPIENTS="${{ secrets._COMMENTS_EMAIL_RECIPIENTS }}" \
+          --memory="2g" \
+          --cpus="1" \
+          ghcr.io/ai-cfia/insect-project:506a81d4aa7b7da5cb5d993bfbc9953b0332ec71 \
+          comments
