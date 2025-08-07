@@ -26,12 +26,7 @@ async def get_canadian_observations_with_flagged_comments(
     """Get Canadian observations with flagged comments for given date and taxa."""
     # Get all observations for the given date and taxa
     observations = await get_all_observations(
-        s=s,
-        iconic_taxa=iconic_taxa,
-        date_on=date_on,
-        area=s.areas.CA,
-        order="desc",
-        order_by="created_at",
+        s=s, iconic_taxa=iconic_taxa, date_on=date_on, area=s.areas.CA
     )
     # Filter to only observations with comments
     observations = [

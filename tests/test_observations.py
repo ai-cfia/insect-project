@@ -456,45 +456,31 @@ class TestGetAllObservations(unittest.IsolatedAsyncioTestCase):
 
     @patch("src.observations.get_observations", new_callable=AsyncMock)
     async def test_get_all_observations_multiple_pages(self, mock_get_observations):
-        # First page with per_page=1 to get total results, then pagination with actual per_page
         mock_get_observations.side_effect = [
-            AsyncMock(
-                total_results=4, results=[Observation(id=1)]
-            ),  # Initial request with per_page=1
-            AsyncMock(
-                total_results=4, results=[Observation(id=1), Observation(id=2)]
-            ),  # First page with actual per_page
-            AsyncMock(
-                total_results=4, results=[Observation(id=3), Observation(id=4)]
-            ),  # Second page
+            AsyncMock(total_results=4, results=[Observation(id=1), Observation(id=2)]),
+            AsyncMock(total_results=4, results=[Observation(id=3), Observation(id=4)]),
         ]
 
         observations = await get_all_observations(
             s=self.settings, taxon_ids=self.taxon_ids, per_page=self.per_page
         )
 
-        # Verify the results
         self.assertEqual(len(observations), 4)
         self.assertEqual([obs.id for obs in observations], [1, 2, 3, 4])
 
-        # Verify the API calls
-        self.assertEqual(mock_get_observations.call_count, 3)
+        self.assertEqual(mock_get_observations.call_count, 2)
 
-        # Verify the arguments passed to each call
         calls = mock_get_observations.call_args_list
-        # First call should be with per_page=1 to get total results
-        self.assertEqual(calls[0][1]["page"], 1)
-        self.assertEqual(calls[0][1]["per_page"], 1)
-        # Subsequent calls should use the actual per_page value
-        self.assertEqual(calls[1][1]["page"], 1)
+        self.assertEqual(calls[0][1]["per_page"], self.per_page)
+        self.assertNotIn("id_above", calls[0][1])
         self.assertEqual(calls[1][1]["per_page"], self.per_page)
-        self.assertEqual(calls[2][1]["page"], 2)
-        self.assertEqual(calls[2][1]["per_page"], self.per_page)
+        self.assertEqual(calls[1][1]["id_above"], "2")
 
-        # Verify all other parameters are consistent across calls
         for call in calls:
             self.assertEqual(call[1]["taxon_ids"], self.taxon_ids)
             self.assertEqual(call[1]["s"], self.settings)
+            self.assertEqual(call[1]["order"], "asc")
+            self.assertEqual(call[1]["order_by"], "id")
 
     @patch("src.observations.get_observations", new_callable=AsyncMock)
     async def test_get_all_observations_single_page(self, mock_get_observations):
@@ -509,7 +495,7 @@ class TestGetAllObservations(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(len(observations), 1)
         self.assertEqual(observations[0].id, 1)
-        self.assertEqual(mock_get_observations.call_count, 2)
+        self.assertEqual(mock_get_observations.call_count, 1)
 
     @patch("src.observations.get_observations", new_callable=AsyncMock)
     async def test_get_all_observations_empty_response(self, mock_get_observations):
@@ -525,7 +511,6 @@ class TestGetAllObservations(unittest.IsolatedAsyncioTestCase):
     @patch("src.observations.get_observations", new_callable=AsyncMock)
     async def test_get_all_observations_pagination_logic(self, mock_get_observations):
         mock_get_observations.side_effect = [
-            AsyncMock(total_results=3, results=[Observation(id=1)]),
             AsyncMock(total_results=3, results=[Observation(id=1), Observation(id=2)]),
             AsyncMock(total_results=3, results=[Observation(id=3)]),
         ]
@@ -536,7 +521,7 @@ class TestGetAllObservations(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(len(observations), 3)
         self.assertEqual([obs.id for obs in observations], [1, 2, 3])
-        self.assertEqual(mock_get_observations.call_count, 3)
+        self.assertEqual(mock_get_observations.call_count, 2)
 
     @patch("src.observations.get_observations", new_callable=AsyncMock)
     async def test_get_all_observations_returned_structure(self, mock_get_observations):
@@ -552,7 +537,7 @@ class TestGetAllObservations(unittest.IsolatedAsyncioTestCase):
         self.assertIsInstance(observations[0], Observation)
         self.assertEqual(observations[0].id, 1)
         self.assertEqual(observations[0].quality_grade, "research")
-        self.assertEqual(mock_get_observations.call_count, 2)
+        self.assertEqual(mock_get_observations.call_count, 1)
 
     @patch("src.observations.get_observations", new_callable=AsyncMock)
     async def test_get_all_observations_with_date_filter(self, mock_get_observations):
@@ -560,7 +545,6 @@ class TestGetAllObservations(unittest.IsolatedAsyncioTestCase):
         date_to = datetime(2024, 12, 31)
 
         mock_get_observations.side_effect = [
-            AsyncMock(total_results=2, results=[Observation(id=1)]),
             AsyncMock(total_results=2, results=[Observation(id=1), Observation(id=2)]),
         ]
 
@@ -574,7 +558,7 @@ class TestGetAllObservations(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(len(observations), 2)
         self.assertEqual([obs.id for obs in observations], [1, 2])
-        self.assertEqual(mock_get_observations.call_count, 2)
+        self.assertEqual(mock_get_observations.call_count, 1)
 
     @patch("src.observations.get_observations", new_callable=AsyncMock)
     async def test_get_all_observations_with_area_filter(self, mock_get_observations):
@@ -591,7 +575,7 @@ class TestGetAllObservations(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(len(observations), 1)
         self.assertEqual(observations[0].id, 1)
-        self.assertEqual(mock_get_observations.call_count, 2)
+        self.assertEqual(mock_get_observations.call_count, 1)
 
     @patch("src.observations.get_observations", new_callable=AsyncMock)
     async def test_get_all_observations_with_taxon_names(self, mock_get_observations):
@@ -610,7 +594,7 @@ class TestGetAllObservations(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(len(observations), 1)
         self.assertEqual(observations[0].id, 1)
-        self.assertEqual(mock_get_observations.call_count, 2)
+        self.assertEqual(mock_get_observations.call_count, 1)
 
 
 class TestTransformSummariesToDataFrame(unittest.TestCase):
