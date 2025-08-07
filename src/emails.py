@@ -43,7 +43,7 @@ def send_smtp_emails(s: Settings, recipients: list[EmailStr], subject: str, body
         server.ehlo()
         server.login(s.smtp_username, s.smtp_password.get_secret_value())
         for recipient in tqdm(recipients, desc="Sending emails"):
-            log.info(f"Sending email to {recipient}")
+            log.debug(f"Sending email to {recipient}")
             message = MIMEMultipart("alternative")
             message["Subject"] = subject
             message["From"] = email.utils.formataddr((s.sender_name, s.sender_email))
