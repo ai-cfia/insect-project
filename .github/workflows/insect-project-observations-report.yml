@@ -28,5 +28,5 @@ jobs:
           -e _OBSERVATION_EMAIL_RECIPIENTS="$_OBSERVATION_EMAIL_RECIPIENTS" \
           --memory="2g" \
           --cpus="1" \
-          ghcr.io/ai-cfia/insect-project:506a81d4aa7b7da5cb5d993bfbc9953b0332ec71 \
+          ghcr.io/ai-cfia/insect-project:${{ github.ref_name }} \
           observations
