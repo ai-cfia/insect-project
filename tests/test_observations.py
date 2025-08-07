@@ -442,7 +442,10 @@ class TestObservationSummary(unittest.TestCase):
         self.assertTrue("amazing specimen" in updated_obs.flagged_comments[1])
         self.assertEqual(len(updated_obs.flagged_terms), 2)
         self.assertTrue(
-            all(term in updated_obs.flagged_terms for term in ["rare", "amazing"])
+            all(
+                term in {t for terms in updated_obs.flagged_terms for t in terms}
+                for term in ["rare", "amazing"]
+            )
         )
 
 

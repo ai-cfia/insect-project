@@ -89,7 +89,7 @@ class ObservationSummary(BaseModel):
     )
     comments: list[str] | None = None
     flagged_comments: list[str] | None = None
-    flagged_terms: list[str] | None = None
+    flagged_terms: list[list[str]] | None = None
     city: str | None = None
     province: str | None = None
     country: str | None = None
