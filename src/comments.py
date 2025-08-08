@@ -26,12 +26,7 @@ async def get_canadian_observations_with_flagged_comments(
     """Get Canadian observations with flagged comments for given date and taxa."""
     # Get all observations for the given date and taxa
     observations = await get_all_observations(
-        s=s,
-        iconic_taxa=iconic_taxa,
-        date_on=date_on,
-        area=s.areas.CA,
-        order="desc",
-        order_by="created_at",
+        s=s, iconic_taxa=iconic_taxa, date_on=date_on, area=s.areas.CA
     )
     # Filter to only observations with comments
     observations = [
@@ -71,10 +66,9 @@ async def get_all_canadian_observations_with_flagged_comments_df(
     # Get summaries for all dates
     all_summaries = []
     for d in tqdm_async(dates, desc="Processing dates"):
-        summaries = await get_canadian_observations_with_flagged_comments(
-            s, d, iconic_taxa
+        all_summaries.extend(
+            await get_canadian_observations_with_flagged_comments(s, d, iconic_taxa)
         )
-        all_summaries.extend(summaries)
     # Convert summaries to DataFrame and process
     summaries_df = transform_summaries_to_df(all_summaries, s.df_column_map_default)
     summaries_df = keep_only_first_sample_image(s, summaries_df)
@@ -108,7 +102,7 @@ if __name__ == "__main__":
         s = Settings()
         iconic_taxa = ["insecta"]
 
-        dates = get_recent_dates(7)
+        dates = get_recent_dates(1)
 
         # Get flagged comments DataFrame
         df = await get_all_canadian_observations_with_flagged_comments_df(

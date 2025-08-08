@@ -294,8 +294,6 @@ class TestFlagComments(unittest.TestCase):
         self.settings.comment_flags = ["invasive", "pest", "harmful"]
 
     def test_flag_comments_with_matches(self):
-        from src.pydantic_models import ObservationSummary
-
         summary = ObservationSummary(
             id=1,
             comments=[
@@ -305,29 +303,27 @@ class TestFlagComments(unittest.TestCase):
             ],
         )
         result = flag_comments(self.settings, summary)
-
+        self.assertEqual(
+            result.flagged_comments,
+            ["this species is invasive", "looks like a harmful pest"],
+        )
+        self.assertEqual(result.flagged_terms, [["invasive"], ["harmful", "pest"]])
         self.assertEqual(len(result.flagged_comments), 2)
-        self.assertEqual(set(result.flagged_terms), {"invasive", "harmful", "pest"})
+        self.assertEqual(len(result.flagged_terms), 2)
 
     def test_flag_comments_no_matches(self):
-        from src.pydantic_models import ObservationSummary
-
         summary = ObservationSummary(
             id=1, comments=["Normal observation", "Another normal comment"]
         )
         result = flag_comments(self.settings, summary)
-
-        self.assertEqual(len(result.flagged_comments), 0)
-        self.assertEqual(len(result.flagged_terms), 0)
+        self.assertEqual(result.flagged_comments, [])
+        self.assertEqual(result.flagged_terms, [])
 
     def test_flag_comments_empty(self):
-        from src.pydantic_models import ObservationSummary
-
         summary = ObservationSummary(id=1, comments=[])
         result = flag_comments(self.settings, summary)
-
-        self.assertEqual(len(result.flagged_comments), 0)
-        self.assertEqual(len(result.flagged_terms), 0)
+        self.assertEqual(result.flagged_comments, [])
+        self.assertEqual(result.flagged_terms, [])
 
 
 class TestCleanAndFormatDF(unittest.TestCase):

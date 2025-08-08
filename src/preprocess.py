@@ -131,7 +131,7 @@ def clean_and_format_df(s: Settings, df: pd.DataFrame, columns: list[str]):
 @validate_call
 def flag_comments(s: Settings, summary: ObservationSummary):
     """Flag comments containing specified terms in an observation summary"""
-    if not summary.cleaned_comments:
+    if not summary.cleaned_comments or not s.comment_flags:
         summary.flagged_comments = []
         summary.flagged_terms = []
         return summary
@@ -140,17 +140,19 @@ def flag_comments(s: Settings, summary: ObservationSummary):
         r"\b(" + "|".join(map(re.escape, s.comment_flags)) + r")\b", re.IGNORECASE
     )
 
-    flagged_comments = []
-    flagged_terms = set()
+    flagged_comments: list[str] = []
+    flagged_terms: list[list[str]] = []
 
     for comment in summary.cleaned_comments:
         matches = pattern.findall(comment)
         if matches:
+            seen = set()
+            terms = [t for t in matches if not (t in seen or seen.add(t))]
             flagged_comments.append(comment)
-            flagged_terms.update(matches)
+            flagged_terms.append(terms)
 
     summary.flagged_comments = flagged_comments
-    summary.flagged_terms = list(flagged_terms)
+    summary.flagged_terms = flagged_terms
     return summary
 
 

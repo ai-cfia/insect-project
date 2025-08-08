@@ -30,28 +30,38 @@ async def get_observations(
     per_page: int = 200,
     page: int = 1,
     area: Area | None = None,
+    id_above: int | None = None,
+    id_below: int | None = None,
 ):
     """Fetch a single page of observations from iNaturalist API"""
     await asyncio.sleep(s.api_request_delay)
 
     async with ApiClient(s.inat_client_config) as api_client:
         api_instance = ObservationsApi(api_client)
-        return await api_instance.observations_get(
-            per_page=str(per_page),
-            page=str(page),
-            created_d1=date_from,
-            created_d2=date_to,
-            created_on=date_on,
-            taxon_name=taxon_names if taxon_names else None,
-            taxon_id=[str(tid) for tid in taxon_ids] if taxon_ids else None,
-            iconic_taxa=iconic_taxa,
-            order=order,
-            order_by=order_by,
-            nelat=area.nelat if area else None,
-            nelng=area.nelng if area else None,
-            swlat=area.swlat if area else None,
-            swlng=area.swlng if area else None,
-        )
+
+        params = {
+            "per_page": str(per_page),
+            "page": str(page),
+            "created_d1": date_from,
+            "created_d2": date_to,
+            "created_on": date_on,
+            "taxon_name": taxon_names if taxon_names else None,
+            "taxon_id": [str(tid) for tid in taxon_ids] if taxon_ids else None,
+            "iconic_taxa": iconic_taxa,
+            "order": order,
+            "order_by": order_by,
+            "nelat": area.nelat if area else None,
+            "nelng": area.nelng if area else None,
+            "swlat": area.swlat if area else None,
+            "swlng": area.swlng if area else None,
+        }
+
+        if id_above is not None:
+            params["id_above"] = str(id_above)
+        if id_below is not None:
+            params["id_below"] = str(id_below)
+
+        return await api_instance.observations_get(**params)
 
 
 @log_call
@@ -61,8 +71,6 @@ async def get_all_observations(
     taxon_ids: list[int] | None = None,
     taxon_names: list[str] | None = None,
     iconic_taxa: list[str] | None = None,
-    order: str | None = None,
-    order_by: str | None = None,
     date_from: datetime | None = None,
     date_to: datetime | None = None,
     date_on: date | None = None,
@@ -70,62 +78,45 @@ async def get_all_observations(
     area: Area | None = None,
 ):
     """Fetch all observations matching criteria with pagination"""
-    # Get first page to determine total results
-    first_page = await get_observations(
+    first = await get_observations(
         s=s,
         taxon_ids=taxon_ids,
         taxon_names=taxon_names,
         iconic_taxa=iconic_taxa,
-        order=order,
-        order_by=order_by,
+        order="asc",
+        order_by="id",
         date_from=date_from,
         date_to=date_to,
         date_on=date_on,
-        per_page=1,
-        page=1,
+        per_page=per_page,
         area=area,
     )
-
-    total_results = first_page.total_results if first_page.results else 0
-    if total_results == 0:
-        log.debug("No observations found.")
-        return []
-
-    all_observations: list[Observation] = []
-    page = 1
-
-    # Fetch all pages with progress bar
-    with tqdm(total=total_results, desc="Fetching observations") as pbar:
-        while True:
-            observations = await get_observations(
-                s=s,
-                taxon_ids=taxon_ids,
-                taxon_names=taxon_names,
-                iconic_taxa=iconic_taxa,
-                order=order,
-                order_by=order_by,
-                date_from=date_from,
-                date_to=date_to,
-                date_on=date_on,
-                per_page=per_page,
-                page=page,
-                area=area,
-            )
-
-            if not observations.results:
-                log.debug("No more observations to fetch.")
-                break
-
-            all_observations.extend(observations.results)
-            pbar.update(len(observations.results))
-
-            if len(all_observations) >= total_results:
-                log.debug("All observations retrieved.")
-                break
-
-            page += 1
-
-    return all_observations
+    obs: list[Observation] = list(first.results or [])
+    total = first.total_results or 0
+    last_id = obs[-1].id if obs else None
+    pbar = tqdm(total=total, initial=len(obs), desc="Fetching observations")
+    while len(obs) < total:
+        page = await get_observations(
+            s=s,
+            taxon_ids=taxon_ids,
+            taxon_names=taxon_names,
+            iconic_taxa=iconic_taxa,
+            order="asc",
+            order_by="id",
+            date_from=date_from,
+            date_to=date_to,
+            date_on=date_on,
+            per_page=per_page,
+            id_above=str(last_id),
+            area=area,
+        )
+        if not page.results:
+            break
+        obs.extend(page.results)
+        last_id = page.results[-1].id
+        pbar.update(len(page.results))
+    pbar.close()
+    return obs
 
 
 @log_call
