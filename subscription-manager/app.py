@@ -10,7 +10,6 @@ import requests
 from nacl import encoding, public
 from dotenv import load_dotenv
 import redis
-import hashlib
 
 load_dotenv()
 
@@ -378,4 +377,5 @@ def api_subscriber_count():
     return jsonify({'count': len(emails)})
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    debug_mode = os.environ.get('FLASK_DEBUG', '0').lower() in ('1', 'true')
+    app.run(debug=debug_mode, host='0.0.0.0', port=5000)

@@ -13,10 +13,10 @@ Tests all functionality including:
 import os
 import json
 import pytest
+import sys
 import tempfile
 import shutil
-from unittest.mock import Mock, patch, MagicMock
-import redis
+from unittest.mock import patch, MagicMock
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -24,9 +24,8 @@ from dotenv import load_dotenv
 load_dotenv('.env.example')
 
 # Import the app
-import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from app import app, get_current_emails, create_init_emails_from_env, update_github_secrets
+from app import app, get_current_emails, create_init_emails_from_env, update_github_secrets  # noqa: E402
 
 @pytest.fixture
 def client():
@@ -237,7 +236,7 @@ class TestGitHubIntegration:
                 mock_open.return_value.__enter__.return_value = mock_file
                 
                 result = update_github_secrets(test_emails)
-                assert result == True
+                assert result
                 
                 # Should call PUT for both secrets
                 assert mock_put.call_count == 2
