@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Subscribe - Insect Project Reports{% endblock %}
+
+{% block content %}
+<div class="header">
+    <h1>Subscribe to Reports</h1>
+    <p>Insect Project Automated Analysis</p>
+</div>
+
+<form method="POST" action="{{ url_for('subscribe') }}">
+    <div class="form-group">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" name="email" placeholder="your.email@inspection.gc.ca" required>
+    </div>
+    
+    <button type="submit" class="btn">Subscribe</button>
+</form>
+
+<div class="actions">
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">Back</a>
+</div>
+
+<div class="footer">
+    <p>Valid domain: @inspection.gc.ca</p>
+    <p>A confirmation email will be sent to verify your subscription</p>
+</div>
+{% endblock %}

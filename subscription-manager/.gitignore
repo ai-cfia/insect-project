@@ -1,0 +1,7 @@
+.env
+emails_state.json
+emails_backup.json
+init_emails.json
+__pycache__/
+*.pyc
+.DS_Store
