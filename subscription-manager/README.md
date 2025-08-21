@@ -76,6 +76,30 @@ SMTP_PASSWORD=your-app-password
 - **Web interface**: `http://localhost:5000`
 - **API**: `GET /api/subscribers/count` for subscriber count
 
+## Testing
+
+Run the complete test suite:
+
+```bash
+# Install test dependencies
+pip install pytest
+
+# Run all tests (uses .env.example for safe test configuration)
+pytest test_app.py -v
+```
+
+Tests use `.env.example` for configuration (no real credentials needed).
+
+**Test coverage:**
+
+- ✅ Email validation (@inspection.gc.ca only)
+- ✅ Subscribe/unsubscribe workflow
+- ✅ Token generation and validation
+- ✅ GitHub API integration (mocked)
+- ✅ File operations (init/state files)
+- ✅ Web interface endpoints
+- ✅ Edge cases and error handling
+
 ## Security
 
 - Required email validation
