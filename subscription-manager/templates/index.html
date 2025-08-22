@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="header">
+    <h1>Insect Project Reports</h1>
+    <p>Email Subscription Management</p>
+</div>
+
+<div class="subscriber-count">
+    <div class="count">{{ subscriber_count }}</div>
+    <div class="label">Active Subscribers</div>
+</div>
+
+<div class="actions">
+    <a href="{{ url_for('subscribe') }}" class="btn">Subscribe</a>
+    <a href="{{ url_for('unsubscribe') }}" class="btn btn-danger">Unsubscribe</a>
+</div>
+
+<div class="footer">
+    <p>Canadian Food Inspection Agency / Agence canadienne d'inspection des aliments</p>
+</div>
+{% endblock %}
