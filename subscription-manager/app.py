@@ -13,8 +13,6 @@ import redis
 
 load_dotenv()
 
-SECRET_KEY = "SECRET_KEY"
-
 GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
 GITHUB_REPO = os.environ.get('GITHUB_REPO', 'ai-cfia/insect-project')
 GITHUB_SECRETS = ['COMMENTS_EMAIL_RECIPIENTS', 'OBSERVATIONS_EMAIL_RECIPIENTS']
@@ -28,7 +26,7 @@ FROM_EMAIL = os.environ.get('FROM_EMAIL', 'noreply@inspection.gc.ca')
 TOKEN_EXPIRY_HOURS = 24
 
 app = Flask(__name__)
-app.secret_key = os.environ.get(SECRET_KEY, secrets.token_hex(32))
+app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(32))
 
 
 redis_client = redis.Redis(
