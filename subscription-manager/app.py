@@ -73,11 +73,15 @@ def get_current_emails():
             with open(init_file, 'r') as f:
                 init_data = json.load(f)
             
+            # Convert emails to lowercase
+            emails_lower = [email.lower() for email in init_data.get('emails', [])]
+            init_data['emails'] = emails_lower
+            
             # Create state file
             with open(state_file, 'w') as f:
                 json.dump(init_data, f, indent=2)
             
-            return init_data.get('emails', [])
+            return emails_lower
         except FileNotFoundError:
             # No init file, start with empty list
             return []
@@ -103,8 +107,8 @@ def create_init_emails_from_env():
             # Parse the environment variable as JSON
             initial_emails = json.loads(initial_emails_env)
             
-            # Filter to only keep @inspection.gc.ca emails
-            filtered_emails = [email for email in initial_emails if email.endswith('@inspection.gc.ca')]
+            # Filter to only keep @inspection.gc.ca emails and convert to lowercase
+            filtered_emails = [email.lower() for email in initial_emails if email.lower().endswith('@inspection.gc.ca')]
             
             init_data = {
                 "emails": filtered_emails,
