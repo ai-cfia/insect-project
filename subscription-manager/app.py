@@ -195,13 +195,18 @@ def subscribe():
             return redirect(url_for('index'))
         
         # Direct subscription without email confirmation
+        print(f"DEBUG: Adding email {email} to list")
         emails.append(email)
         try:
+            print(f"DEBUG: Updating GitHub secrets with {len(emails)} emails")
             update_github_secrets(emails)
+            print(f"DEBUG: Successfully updated GitHub secrets")
             flash('You have been successfully subscribed!', 'success')
         except Exception as e:
             flash('Error updating subscription. Please try again later.', 'error')
-            print(f"Error updating GitHub secrets: {e}")
+            print(f"ERROR updating GitHub secrets: {e}")
+            import traceback
+            traceback.print_exc()
         
         return redirect(url_for('index'))
     
@@ -228,13 +233,18 @@ def unsubscribe():
             return redirect(url_for('index'))
         
         # Direct unsubscription without email confirmation
+        print(f"DEBUG: Removing email {email} from list")
         emails.remove(email)
         try:
+            print(f"DEBUG: Updating GitHub secrets with {len(emails)} emails")
             update_github_secrets(emails)
+            print(f"DEBUG: Successfully updated GitHub secrets")
             flash('You have been successfully unsubscribed.', 'success')
         except Exception as e:
             flash('Error updating subscription. Please try again later.', 'error')
-            print(f"Error updating GitHub secrets: {e}")
+            print(f"ERROR updating GitHub secrets: {e}")
+            import traceback
+            traceback.print_exc()
         
         return redirect(url_for('index'))
     
