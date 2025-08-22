@@ -11,9 +11,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Verify app.py exists
-RUN ls -la /app/ && python -c "import app"
-
 EXPOSE 5000
 
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--threads", "4", "--chdir", "/app", "app:app"]
+CMD ["python", "app.py"]
