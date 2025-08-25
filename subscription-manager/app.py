@@ -38,29 +38,39 @@ def get_github_public_key():
 
 def get_current_emails():
     """Get current email list from local state file."""
+    # Ensure data directory exists
+    os.makedirs('data', exist_ok=True)
+    
+    state_file = 'data/emails_state.json'
+    init_file = 'data/init_emails.json'
+    
     # Check if state file exists, if not initialize
-    if not os.path.exists('emails_state.json'):
+    if not os.path.exists(state_file):
         # Try to create init_emails.json from environment variable first
-        if not os.path.exists('init_emails.json'):
+        if not os.path.exists(init_file):
             create_init_emails_from_env()
         
         try:
             # Initialize from init file
-            with open('init_emails.json', 'r') as f:
+            with open(init_file, 'r') as f:
                 init_data = json.load(f)
             
+            # Convert emails to lowercase
+            emails_lower = [email.lower() for email in init_data.get('emails', [])]
+            init_data['emails'] = emails_lower
+            
             # Create state file
-            with open('emails_state.json', 'w') as f:
+            with open(state_file, 'w') as f:
                 json.dump(init_data, f, indent=2)
             
-            return init_data.get('emails', [])
+            return emails_lower
         except FileNotFoundError:
             # No init file, start with empty list
             return []
     
     # Read from state file
     try:
-        with open('emails_state.json', 'r') as f:
+        with open(state_file, 'r') as f:
             data = json.load(f)
             return data.get('emails', [])
     except (FileNotFoundError, json.JSONDecodeError):
@@ -68,6 +78,10 @@ def get_current_emails():
 
 def create_init_emails_from_env():
     """Create init_emails.json from INITIAL_EMAILS_LIST environment variable."""
+    # Ensure data directory exists
+    os.makedirs('data', exist_ok=True)
+    
+    init_file = 'data/init_emails.json'
     initial_emails_env = os.environ.get('INITIAL_EMAILS_LIST')
     
     if initial_emails_env:
@@ -75,8 +89,8 @@ def create_init_emails_from_env():
             # Parse the environment variable as JSON
             initial_emails = json.loads(initial_emails_env)
             
-            # Filter to only keep @inspection.gc.ca emails
-            filtered_emails = [email for email in initial_emails if email.endswith('@inspection.gc.ca')]
+            # Filter to only keep @inspection.gc.ca emails and convert to lowercase
+            filtered_emails = [email.lower() for email in initial_emails if email.lower().endswith('@inspection.gc.ca')]
             
             init_data = {
                 "emails": filtered_emails,
@@ -84,15 +98,15 @@ def create_init_emails_from_env():
             }
             
             # Create init_emails.json
-            with open('init_emails.json', 'w') as f:
+            with open(init_file, 'w') as f:
                 json.dump(init_data, f, indent=2)
             
-            print(f"Created init_emails.json with {len(filtered_emails)} emails from environment")
+            print(f"Created {init_file} with {len(filtered_emails)} emails from environment")
             
         except json.JSONDecodeError as e:
             print(f"Error parsing INITIAL_EMAILS_LIST: {e}")
         except Exception as e:
-            print(f"Error creating init_emails.json: {e}")
+            print(f"Error creating {init_file}: {e}")
     else:
         # Create empty init file
         init_data = {
@@ -100,10 +114,10 @@ def create_init_emails_from_env():
             "updated_at": datetime.now().isoformat()
         }
         
-        with open('init_emails.json', 'w') as f:
+        with open(init_file, 'w') as f:
             json.dump(init_data, f, indent=2)
         
-        print("Created empty init_emails.json - no INITIAL_EMAILS_LIST provided")
+        print(f"Created empty {init_file} - no INITIAL_EMAILS_LIST provided")
 
 def update_github_secrets(emails_list):
     """Update both GitHub secrets with new email list."""
@@ -123,19 +137,21 @@ def update_github_secrets(emails_list):
         "key_id": public_key_data['key_id']
     }
     
-    # Update both secrets
+    # Update both environment secrets
+    environment_name = "dev"  # Change this if using different environment
     for secret_name in GITHUB_SECRETS:
-        url = f"https://api.github.com/repos/{GITHUB_REPO}/actions/secrets/{secret_name}"
+        url = f"https://api.github.com/repos/{GITHUB_REPO}/environments/{environment_name}/secrets/{secret_name}"
         response = requests.put(url, headers=headers, json=data)
         response.raise_for_status()
-        print(f"✓ Updated {secret_name}")
+        print(f"✓ Updated {secret_name} in environment {environment_name}")
     
     # Update local state file
-    with open('emails_state.json', 'w') as f:
+    os.makedirs('data', exist_ok=True)
+    state_file = 'data/emails_state.json'
+    with open(state_file, 'w') as f:
         json.dump({'emails': emails_list, 'updated_at': datetime.now().isoformat()}, f, indent=2)
     
     return True
-
 
 @app.route('/')
 def index():
@@ -162,7 +178,6 @@ def subscribe():
             flash('This email is already subscribed.', 'info')
             return redirect(url_for('index'))
         
-        # Add email directly without confirmation
         emails.append(email)
         try:
             update_github_secrets(emails)
@@ -195,9 +210,10 @@ def unsubscribe():
             flash('This email is not subscribed.', 'info')
             return redirect(url_for('index'))
         
-        # Remove email directly without confirmation
+        print(f"DEBUG: Removing email {email} from list")
         emails.remove(email)
         try:
+            print(f"DEBUG: Updating GitHub secrets with {len(emails)} emails")
             update_github_secrets(emails)
             flash('You have been successfully unsubscribed.', 'success')
         except Exception as e:
@@ -207,7 +223,6 @@ def unsubscribe():
         return redirect(url_for('index'))
     
     return render_template('unsubscribe.html')
-
 
 @app.route('/api/subscribers/count')
 def api_subscriber_count():
