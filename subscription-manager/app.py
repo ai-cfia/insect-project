@@ -1,35 +1,22 @@
 import os
 import json
-import secrets
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from datetime import datetime, timedelta
+from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 import requests
 from nacl import encoding, public
 from dotenv import load_dotenv
-# import redis  # No longer needed without email confirmation
 
 load_dotenv()
+
+SECRET_KEY = "SECRET_KEY"
+ENVIRONMENT = os.environ.get('ENVIRONMENT', 'dev')
 
 GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
 GITHUB_REPO = os.environ.get('GITHUB_REPO', 'ai-cfia/insect-project')
 GITHUB_SECRETS = ['COMMENTS_EMAIL_RECIPIENTS', 'OBSERVATIONS_EMAIL_RECIPIENTS']
 
-SMTP_SERVER = os.environ.get('SMTP_SERVER', 'smtp.gmail.com')
-SMTP_PORT = int(os.environ.get('SMTP_PORT', 587))
-SMTP_USERNAME = os.environ.get('SMTP_USERNAME')
-SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD')
-FROM_EMAIL = os.environ.get('FROM_EMAIL', 'noreply@inspection.gc.ca')
-
-# TOKEN_EXPIRY_HOURS = 24  # No longer needed
-
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(32))
-
-
-# Redis client removed - no longer needed without email confirmation
+app.secret_key = os.environ.get(SECRET_KEY, 'dev-secret-key-change-in-production')
 
 def encrypt_secret_for_repository(public_key: str, secret_value: str) -> str:
     """Encrypt a secret using a repository's public key."""
@@ -166,10 +153,6 @@ def update_github_secrets(emails_list):
     
     return True
 
-# Token generation removed - no longer needed
-
-# Email confirmation function removed - no longer needed
-
 @app.route('/')
 def index():
     emails = get_current_emails()
@@ -195,19 +178,13 @@ def subscribe():
             flash('This email is already subscribed.', 'info')
             return redirect(url_for('index'))
         
-        # Direct subscription without email confirmation
-        print(f"DEBUG: Adding email {email} to list")
         emails.append(email)
         try:
-            print(f"DEBUG: Updating GitHub secrets with {len(emails)} emails")
             update_github_secrets(emails)
-            print(f"DEBUG: Successfully updated GitHub secrets")
             flash('You have been successfully subscribed!', 'success')
         except Exception as e:
             flash('Error updating subscription. Please try again later.', 'error')
-            print(f"ERROR updating GitHub secrets: {e}")
-            import traceback
-            traceback.print_exc()
+            print(f"Error updating GitHub secrets: {e}")
         
         return redirect(url_for('index'))
     
@@ -233,27 +210,19 @@ def unsubscribe():
             flash('This email is not subscribed.', 'info')
             return redirect(url_for('index'))
         
-        # Direct unsubscription without email confirmation
         print(f"DEBUG: Removing email {email} from list")
         emails.remove(email)
         try:
             print(f"DEBUG: Updating GitHub secrets with {len(emails)} emails")
             update_github_secrets(emails)
-            print(f"DEBUG: Successfully updated GitHub secrets")
             flash('You have been successfully unsubscribed.', 'success')
         except Exception as e:
             flash('Error updating subscription. Please try again later.', 'error')
-            print(f"ERROR updating GitHub secrets: {e}")
-            import traceback
-            traceback.print_exc()
+            print(f"Error updating GitHub secrets: {e}")
         
         return redirect(url_for('index'))
     
     return render_template('unsubscribe.html')
-
-# Removed confirm_subscribe route - no longer needed with direct subscription
-
-# Removed confirm_unsubscribe route - no longer needed with direct unsubscription
 
 @app.route('/api/subscribers/count')
 def api_subscriber_count():
