@@ -137,13 +137,12 @@ def update_github_secrets(emails_list):
         "key_id": public_key_data['key_id']
     }
     
-    # Update both environment secrets
-    environment_name = "dev"  # Change this if using different environment
+    # Update both repository secrets
     for secret_name in GITHUB_SECRETS:
-        url = f"https://api.github.com/repos/{GITHUB_REPO}/environments/{environment_name}/secrets/{secret_name}"
+        url = f"https://api.github.com/repos/{GITHUB_REPO}/actions/secrets/{secret_name}"
         response = requests.put(url, headers=headers, json=data)
         response.raise_for_status()
-        print(f"✓ Updated {secret_name} in environment {environment_name}")
+        print(f"✓ Updated {secret_name} repository secret")
     
     # Update local state file
     os.makedirs('data', exist_ok=True)
