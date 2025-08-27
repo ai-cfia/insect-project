@@ -98,6 +98,9 @@ class Settings(BaseSettings):
     sender_email: EmailStr
     sender_name: str = "AI LAB CFIA"
     email_template_dir: str = "templates"
+    subscription_manager_url: str | None = None
+    contact_email: EmailStr | None = None
+    ai_lab_url: str = "https://github.com/ai-cfia/"
     observations_email_recipients: list[EmailStr] | None = []
     observations_email_subject_template_name: str = "observations_email_subject.j2"
     observations_email_body_template_name: str = "email_body.html"
@@ -198,7 +201,11 @@ class Settings(BaseSettings):
     @property
     def template_env(self) -> Environment:
         """Jinja environment configuration"""
-        return Environment(loader=self.template_loader, autoescape=True)
+        env = Environment(loader=self.template_loader, autoescape=True)
+        env.globals["subscription_manager_url"] = self.subscription_manager_url
+        env.globals["contact_email"] = self.contact_email
+        env.globals["ai_lab_url"] = self.ai_lab_url
+        return env
 
     @computed_field
     @property

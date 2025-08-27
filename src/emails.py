@@ -67,7 +67,21 @@ if __name__ == "__main__":
         help="Actually send emails (default: just render and print)",
     )
     parser.add_argument(
-        "--recipients", nargs="+", help="Email recipients (required if --send is used)"
+        "--recipients",
+        nargs="+",
+        help=(
+            "Optional override: space-separated emails. "
+            "Defaults to recipients from settings (see --group)."
+        ),
+    )
+    parser.add_argument(
+        "--group",
+        choices=["observations", "comments"],
+        default="observations",
+        help=(
+            "Recipient group to use from settings when --recipients is not provided. "
+            "Default: observations"
+        ),
     )
     parser.add_argument(
         "--subject", default="Test Email from Insect Project", help="Email subject line"
@@ -75,13 +89,21 @@ if __name__ == "__main__":
     parser.add_argument(
         "--template",
         choices=["simple", "full"],
-        default="simple",
-        help="Template to use: 'simple' for basic HTML, 'full' for complete template",
+        default="full",
+        help="Template to use: default is 'full' (report template)",
     )
     args = parser.parse_args()
-    if args.send and not args.recipients:
-        parser.error("--recipients is required when --send is used")
     settings = Settings()
+    default_group_recipients = (
+        settings.observations_email_recipients
+        if args.group == "observations"
+        else settings.comments_email_recipients
+    )
+    recipients = args.recipients or list(default_group_recipients or [])
+    if args.send and not recipients:
+        parser.error(
+            "No recipients provided. Pass --recipients or set observations_email_recipients in settings"
+        )
     data = {
         "upper taxa": ["Insecta", "Plantae", "Mollusca", "Other"],
         "name": ["Species A", "Species B", "Species C", "Species D"],
@@ -90,27 +112,29 @@ if __name__ == "__main__":
     df = pd.DataFrame(data)
     html = df.to_html(index=False, escape=False)
     tables = [EmailTable(title="Test Table", html=html)]
-    if args.template == "full":
+    if args.template == "simple":
+        template = Template(
+            "{{ tables[0].title }}<br>{{ tables[0].html }}", autoescape=True
+        )
+    else:
         try:
             template = settings.observations_email_body_template
         except Exception as e:
             log.warning(
-                f"Could not load full template: {e}. Falling back to simple template."
+                f"Could not load report template: {e}. Falling back to simple template."
             )
             template = Template(
                 "{{ tables[0].title }}<br>{{ tables[0].html }}", autoescape=True
             )
-    else:
-        template = Template(
-            "{{ tables[0].title }}<br>{{ tables[0].html }}", autoescape=True
-        )
     body = render_email_body(template, tables, empty_message="No data.")
     print("Email Body:")
     print(body)
     if args.send:
-        print(f"\nSending emails to: {', '.join(args.recipients)}")
+        print(
+            f"\nSending emails to: {', '.join(recipients)} (group={args.group if not args.recipients else 'override'})"
+        )
         try:
-            send_smtp_emails(settings, args.recipients, args.subject, body)
+            send_smtp_emails(settings, recipients, args.subject, body)
             print("✅ Emails sent successfully!")
         except Exception as e:
             print(f"❌ Failed to send emails: {e}")
