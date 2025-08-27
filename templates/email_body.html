@@ -24,13 +24,13 @@
     <br />
     <br />
     <p>
-      <a href="https://github.com/ai-cfia/">AI Lab</a>
+      <a href="{{ ai_lab_url }}">AI Lab</a>
       <br />
       Innovation, Business, and Service Development Branch
       <br />
       Canadian Food Inspection Agency / Government of Canada
       <br />
-      <a href="mailto:cfia.ai-ia.acia@canada.ca?subject=EarlyWarning%20Message">cfia.ai-ia.acia@canada.ca</a>
+      <a href="mailto:{{ contact_email or 'cfia.ai-ia.acia@canada.ca' }}?subject=EarlyWarning%20Message">{{ contact_email or 'cfia.ai-ia.acia@canada.ca' }}</a>
       <br />
       Laboratoire d'intelligence artificielle
       <br />
@@ -39,7 +39,7 @@
       <br />
       Agence canadienne d'inspection des aliments / Gouvernement du Canada
       <br />
-      <a href="mailto:cfia.ai-ia.acia@canada.ca?subject=EarlyWarning%20Message">cfia.ai-ia.acia@canada.ca</a>
+      <a href="mailto:{{ contact_email or 'cfia.ai-ia.acia@canada.ca' }}?subject=EarlyWarning%20Message">{{ contact_email or 'cfia.ai-ia.acia@canada.ca' }}</a>
       <br />
       <br />
       <small>
@@ -47,18 +47,34 @@
         "early warning" project mailing list.
         <br />
         Want to change how you receive these emails? Please send us an email at
-        <a href="mailto:cfia.ai-ia.acia@canada.ca?subject=EarlyWarning%20Message">cfia.ai-ia.acia@canada.ca</a>
+        <a href="mailto:{{ contact_email or 'cfia.ai-ia.acia@canada.ca' }}?subject=EarlyWarning%20Message">{{ contact_email or 'cfia.ai-ia.acia@canada.ca' }}</a>
       </small>
       <br />
       <br />
+      {% if subscription_manager_url %}
+        <small>
+          Manage your subscription here:
+          <a href="{{ subscription_manager_url }}">{{ subscription_manager_url }}</a>
+        </small>
+        <br />
+        <br />
+      {% endif %}
       <small>
         Vous recevez ce courriel parce que vous avez demandé à être ajouté à la
         liste d'envoi du projet "early warning".
         <br />
         Si vous ne souhaitez plus recevoir ce message, veuillez nous envoyer un
         courriel à
-        <a href="mailto:cfia.ai-ia.acia@canada.ca?subject=EarlyWarning%20Message">cfia.ai-ia.acia@canada.ca</a>
+        <a href="mailto:{{ contact_email or 'cfia.ai-ia.acia@canada.ca' }}?subject=EarlyWarning%20Message">{{ contact_email or 'cfia.ai-ia.acia@canada.ca' }}</a>
       </small>
+      <br />
+      <br />
+      {% if subscription_manager_url %}
+        <small>
+          Gérer votre abonnement ici :
+          <a href="{{ subscription_manager_url }}">{{ subscription_manager_url }}</a>
+        </small>
+      {% endif %}
     </p>
   </body>
 </html>
