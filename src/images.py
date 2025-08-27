@@ -18,7 +18,12 @@ from src.settings import Settings
 def download(url: HttpUrl):
     filename = Path(f"{uuid.uuid4().hex}.jpg")
     try:
-        with urllib.request.urlopen(str(url)) as response:
+        # Some hosts (e.g., Wikimedia) may return 403 without a User-Agent
+        request = urllib.request.Request(
+            str(url),
+            headers={"User-Agent": "Mozilla/5.0 (compatible; InsectProject/1.0)"},
+        )
+        with urllib.request.urlopen(request, timeout=15) as response:
             image_data = io.BytesIO(response.read())
         image = Image.open(image_data)
         if image.mode in ("RGBA", "P"):
