@@ -58,3 +58,5 @@ docs/
 *.md
 !README.md
 LICENSE 
+
+.cursor
