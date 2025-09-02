@@ -98,8 +98,8 @@ class Settings(BaseSettings):
     sender_email: EmailStr
     sender_name: str = "AI LAB CFIA"
     email_template_dir: str = "templates"
-    subscription_manager_url: str | None = None
-    contact_email: EmailStr | None = None
+    subscription_manager_url: str = "https://insect.inspection.alpha.canada.ca"
+    contact_email: EmailStr = "cfia.ai-ia.acia@canada.ca"
     ai_lab_url: str = "https://github.com/ai-cfia/"
     observations_email_recipients: list[EmailStr] | None = []
     observations_email_subject_template_name: str = "observations_email_subject.j2"

@@ -178,3 +178,5 @@ end_to_end_pipeline_artifacts
 .DS_Store
 archive/
 cache/
+
+.cursor
