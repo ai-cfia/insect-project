@@ -1,13 +1,13 @@
 numpy==2.2.4
-Pillow==11.1.0
-torch==2.6.0
+Pillow==12.1.1
+torch==2.8.0
 torchvision==0.21.0
-urllib3==2.3.0
+urllib3==2.6.3
 pandas==2.2.3
 reverse-geocode==1.6.5
 scipy==1.15.2
 geopy==2.4.1
-requests==2.32.3
+requests==2.32.4
 git+https://github.com/ai-cfia/inaturalist-client.git@main
 pydantic[email]==2.11.1
 pydantic-settings==2.8.1
