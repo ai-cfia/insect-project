@@ -5,7 +5,6 @@ Test suite for Email Subscription Manager
 Tests all functionality including:
 - Email validation
 - Subscribe/unsubscribe flows
-- Token validation
 - GitHub API integration
 - File operations
 """
@@ -48,23 +47,17 @@ def temp_dir():
     os.chdir(old_cwd)
     shutil.rmtree(temp_dir)
 
-@pytest.fixture
-def mock_redis():
-    """Mock Redis client"""
-    with patch('app.redis_client') as mock_redis:
-        mock_redis.setex.return_value = True
-        mock_redis.get.return_value = None
-        mock_redis.delete.return_value = True
-        yield mock_redis
 
 class TestEmailValidation:
     """Test email validation logic"""
     
-    def test_valid_inspection_email(self, client):
+    @patch('app.update_github_secrets')
+    def test_valid_inspection_email(self, mock_update_secrets, client):
         """Test valid @inspection.gc.ca email"""
-        with patch('app.redis_client'), patch('app.send_confirmation_email', return_value=True):
-            response = client.post('/subscribe', data={'email': 'test@inspection.gc.ca'})
-            assert response.status_code == 302  # Redirect after success
+        mock_update_secrets.return_value = True
+        response = client.post('/subscribe', data={'email': 'test@inspection.gc.ca'})
+        assert response.status_code == 302  # Redirect after success
+        mock_update_secrets.assert_called_once()
     
     def test_invalid_domain_rejected(self, client):
         """Test invalid domain rejection"""
@@ -132,18 +125,16 @@ class TestFileOperations:
 class TestSubscribeFlow:
     """Test subscription workflow"""
     
-    @patch('app.send_confirmation_email')
-    @patch('app.redis_client')
     @patch('app.get_current_emails')
-    def test_subscribe_new_email(self, mock_get_emails, mock_redis, mock_send_email, client):
+    @patch('app.update_github_secrets')
+    def test_subscribe_new_email(self, mock_update_secrets, mock_get_emails, client):
         """Test subscribing a new email"""
         mock_get_emails.return_value = []
-        mock_send_email.return_value = True
-        mock_redis.setex.return_value = True
+        mock_update_secrets.return_value = True
         
         response = client.post('/subscribe', data={'email': 'new@inspection.gc.ca'})
         assert response.status_code == 302
-        mock_send_email.assert_called_once()
+        mock_update_secrets.assert_called_once()
     
     @patch('app.get_current_emails')
     def test_subscribe_existing_email(self, mock_get_emails, client):
@@ -153,42 +144,20 @@ class TestSubscribeFlow:
         response = client.post('/subscribe', data={'email': 'existing@inspection.gc.ca'})
         assert response.status_code == 302
     
-    @patch('app.redis_client')
-    @patch('app.get_current_emails')
-    @patch('app.update_github_secrets')
-    def test_confirm_subscribe_valid_token(self, mock_update_secrets, mock_get_emails, mock_redis, client):
-        """Test confirming subscription with valid token"""
-        mock_redis.get.return_value = 'test@inspection.gc.ca'
-        mock_get_emails.return_value = []
-        mock_update_secrets.return_value = True
-        
-        response = client.get('/confirm_subscribe?token=valid-token&email=test@inspection.gc.ca')
-        assert response.status_code == 302
-        mock_update_secrets.assert_called_once()
-    
-    @patch('app.redis_client')
-    def test_confirm_subscribe_invalid_token(self, mock_redis, client):
-        """Test confirming subscription with invalid token"""
-        mock_redis.get.return_value = None
-        
-        response = client.get('/confirm_subscribe?token=invalid-token&email=test@inspection.gc.ca')
-        assert response.status_code == 302
 
 class TestUnsubscribeFlow:
     """Test unsubscription workflow"""
     
-    @patch('app.send_confirmation_email')
-    @patch('app.redis_client')
     @patch('app.get_current_emails')
-    def test_unsubscribe_existing_email(self, mock_get_emails, mock_redis, mock_send_email, client):
+    @patch('app.update_github_secrets')
+    def test_unsubscribe_existing_email(self, mock_update_secrets, mock_get_emails, client):
         """Test unsubscribing an existing email"""
         mock_get_emails.return_value = ['existing@inspection.gc.ca']
-        mock_send_email.return_value = True
-        mock_redis.setex.return_value = True
+        mock_update_secrets.return_value = True
         
         response = client.post('/unsubscribe', data={'email': 'existing@inspection.gc.ca'})
         assert response.status_code == 302
-        mock_send_email.assert_called_once()
+        mock_update_secrets.assert_called_once()
     
     @patch('app.get_current_emails')
     def test_unsubscribe_nonexistent_email(self, mock_get_emails, client):
@@ -198,18 +167,6 @@ class TestUnsubscribeFlow:
         response = client.post('/unsubscribe', data={'email': 'nonexistent@inspection.gc.ca'})
         assert response.status_code == 302
     
-    @patch('app.redis_client')
-    @patch('app.get_current_emails')
-    @patch('app.update_github_secrets')
-    def test_confirm_unsubscribe_valid_token(self, mock_update_secrets, mock_get_emails, mock_redis, client):
-        """Test confirming unsubscription with valid token"""
-        mock_redis.get.return_value = 'test@inspection.gc.ca'
-        mock_get_emails.return_value = ['test@inspection.gc.ca']
-        mock_update_secrets.return_value = True
-        
-        response = client.get('/confirm_unsubscribe?token=valid-token&email=test@inspection.gc.ca')
-        assert response.status_code == 302
-        mock_update_secrets.assert_called_once()
 
 class TestGitHubIntegration:
     """Test GitHub API integration"""
@@ -297,21 +254,6 @@ class TestWebInterface:
 class TestEdgeCases:
     """Test edge cases and error conditions"""
     
-    def test_missing_token_parameter(self, client):
-        """Test confirmation URLs without token parameter"""
-        response = client.get('/confirm_subscribe?email=test@inspection.gc.ca')
-        assert response.status_code == 302
-        
-        response = client.get('/confirm_unsubscribe?email=test@inspection.gc.ca')
-        assert response.status_code == 302
-    
-    def test_missing_email_parameter(self, client):
-        """Test confirmation URLs without email parameter"""
-        response = client.get('/confirm_subscribe?token=test-token')
-        assert response.status_code == 302
-        
-        response = client.get('/confirm_unsubscribe?token=test-token')
-        assert response.status_code == 302
     
     @patch('app.get_current_emails')
     def test_corrupted_state_file(self, mock_get_emails, temp_dir):
