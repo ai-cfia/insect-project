@@ -28,9 +28,10 @@ Web application for managing subscriptions to automated Insect Project reports.
 
 ### Subscribe/unsubscribe flow
 
-1. User enters email → Token generated and stored in Redis
-2. Confirmation email sent
-3. User clicks link → Email added/removed + GitHub secrets updated
+1. User enters email
+2. Email is validated (@inspection.gc.ca)
+3. Email is added/removed from local state
+4. GitHub secrets are updated automatically
 
 ## Quick installation
 
@@ -46,7 +47,6 @@ docker-compose up --build
 
 ```bash
 pip install -r requirements.txt
-redis-server
 python app.py
 ```
 
@@ -59,16 +59,6 @@ GITHUB_REPO=ai-cfia/insect-project
 
 # Initial email list (JSON array)
 INITIAL_EMAILS_LIST=["email1@inspection.gc.ca","email2@inspection.gc.ca"]
-
-# Redis
-REDIS_HOST=localhost
-REDIS_PORT=6379
-
-# SMTP (for confirmation emails)
-SMTP_SERVER=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USERNAME=your-email@gmail.com  
-SMTP_PASSWORD=your-app-password
 ```
 
 ## Usage
@@ -100,8 +90,5 @@ Tests use `.env.example` for configuration (no real credentials needed).
 - ✅ Web interface endpoints
 - ✅ Edge cases and error handling
 
-## Security
-
 - Required email validation
-- Temporary tokens (24h)
 - GitHub secrets encryption
