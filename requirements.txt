@@ -13,5 +13,5 @@ pydantic[email]==2.11.1
 pydantic-settings==2.8.1
 python-dotenv==1.1.0
 Jinja2==3.1.6
-pytest==8.3.5
+pytest==8.4.2
 tqdm==4.67.1
