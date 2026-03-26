@@ -7,7 +7,7 @@ pandas==2.2.3
 reverse-geocode==1.6.5
 scipy==1.15.2
 geopy==2.4.1
-requests==2.32.3
+requests==2.33.0
 git+https://github.com/ai-cfia/inaturalist-client.git@main
 pydantic[email]==2.11.1
 pydantic-settings==2.8.1
