@@ -1,4 +1,5 @@
 import logging
+import os
 import re
 
 import pandas as pd
@@ -10,6 +11,22 @@ from src.pydantic_models import ObservationSummary
 from src.settings import Settings
 
 log = logging.getLogger(__name__)
+
+
+def _write_ids_debug_artifact(stage: str, ids: list):
+    smtp_debug_level = os.getenv("SMTP_DEBUG_LEVEL", "0")
+    if smtp_debug_level in {"", "0"}:
+        return
+
+    artifact_path = os.getenv("OBSERVATION_IDS_DEBUG_FILE")
+    if not artifact_path:
+        return
+
+    try:
+        with open(artifact_path, "a", encoding="utf-8") as f:
+            f.write(f"{stage}: {ids}\n")
+    except Exception as e:
+        log.warning("Failed to write observation IDs debug artifact: %s", e)
 
 
 @log_call
@@ -35,6 +52,25 @@ def add_location_details_df(s: Settings, df: pd.DataFrame):
     df[s.province_column] = provinces
     df["Country"] = [c.lower() for c in countries]
 
+    if log.isEnabledFor(logging.DEBUG) and s.observation_id_column in df.columns:
+        sample_columns = [
+            col
+            for col in [
+                s.observation_id_column,
+                s.coords_column,
+                s.city_column,
+                s.province_column,
+                "Country",
+            ]
+            if col in df.columns
+        ]
+        sample = df[sample_columns].head(10).to_dict("records")
+        log.debug(
+            "add_location_details_df: geocoded %s rows; sample=%s",
+            len(df),
+            sample,
+        )
+
     return df
 
 
@@ -59,7 +95,41 @@ def filter_ca_us_locations(s: Settings, df: pd.DataFrame):
         log.debug(f"Column '{country_column}' missing. Skipping filtering.")
         return df
 
+    before_count = len(df)
+    before_distribution = None
+    before_ids = None
+    if log.isEnabledFor(logging.DEBUG):
+        before_distribution = (
+            df[country_column].fillna("<missing>").value_counts(dropna=False).to_dict()
+        )
+        if s.observation_id_column in df.columns:
+            before_ids = df[s.observation_id_column].tolist()
+        _write_ids_debug_artifact("filter_ca_us_locations.ids_before", before_ids)
+
     df = df.loc[df[country_column].isin({"ca", "us"})].copy()
+
+    after_count = len(df)
+    if log.isEnabledFor(logging.DEBUG):
+        after_distribution = (
+            df[country_column].fillna("<missing>").value_counts(dropna=False).to_dict()
+        )
+        after_ids = (
+            df[s.observation_id_column].tolist()
+            if s.observation_id_column in df.columns
+            else None
+        )
+        _write_ids_debug_artifact("filter_ca_us_locations.ids_after", after_ids)
+        log.debug(
+            "filter_ca_us_locations: rows before=%s after=%s removed=%s country_counts_before=%s country_counts_after=%s ids_before=%s ids_after=%s",
+            before_count,
+            after_count,
+            before_count - after_count,
+            before_distribution,
+            after_distribution,
+            before_ids,
+            after_ids,
+        )
+
     df.drop(columns=[s.coords_column, country_column], inplace=True, errors="ignore")
     df.reset_index(drop=True, inplace=True)
 
@@ -109,10 +179,40 @@ def exclude_non_invasive(s: Settings, df: pd.DataFrame):
     excluded_species = [s.name for s in s.species_data.non_invasive if s.name]
     if not excluded_species:
         return df
+
     pattern = "|".join(excluded_species)
-    return df[~df[s.name_alt_column].str.contains(pattern, na=False)].reset_index(
+
+    if log.isEnabledFor(logging.DEBUG):
+        before_count = len(df)
+        before_ids = (
+            df[s.observation_id_column].tolist()
+            if s.observation_id_column in df.columns
+            else None
+        )
+        _write_ids_debug_artifact("exclude_non_invasive.ids_before", before_ids)
+
+    filtered_df = df[~df[s.name_alt_column].str.contains(pattern, na=False)].reset_index(
         drop=True
     )
+
+    if log.isEnabledFor(logging.DEBUG):
+        after_count = len(filtered_df)
+        after_ids = (
+            filtered_df[s.observation_id_column].tolist()
+            if s.observation_id_column in filtered_df.columns
+            else None
+        )
+        _write_ids_debug_artifact("exclude_non_invasive.ids_after", after_ids)
+        log.debug(
+            "exclude_non_invasive: rows before=%s after=%s removed=%s ids_before=%s ids_after=%s",
+            before_count,
+            after_count,
+            before_count - after_count,
+            before_ids,
+            after_ids,
+        )
+
+    return filtered_df
 
 
 @log_call
@@ -124,7 +224,22 @@ def clean_and_format_df(s: Settings, df: pd.DataFrame, columns: list[str]):
     df = filter_ca_us_locations(s, df)
     df = df[columns]
     df = df.sort_values(by=[s.province_column]).reset_index(drop=True)
-    return keep_only_first_sample_image(s, df)
+    df = keep_only_first_sample_image(s, df)
+
+    if log.isEnabledFor(logging.DEBUG):
+        final_ids = (
+            df[s.observation_id_column].tolist()
+            if s.observation_id_column in df.columns
+            else None
+        )
+        _write_ids_debug_artifact("clean_and_format_df.final_observation_ids", final_ids)
+        log.debug(
+            "clean_and_format_df: final preprocessed rows=%s final_observation_ids=%s",
+            len(df),
+            final_ids,
+        )
+
+    return df
 
 
 @log_call

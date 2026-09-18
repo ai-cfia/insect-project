@@ -2,7 +2,7 @@ name: Insect Project Observations Report
 
 on:
   schedule:
-    - cron: "30 7 * * *" # Run at 7:30 AM UTC every day
+    - cron: "0 12 * * *" # Run at 8:00 AM Eastern (14:00 UTC during EDT)
   workflow_dispatch: # Allow manual trigger
     inputs:
       report_date:
@@ -24,7 +24,10 @@ jobs:
           CONTACT_EMAIL: ${{ vars.CONTACT_EMAIL }}
           SUBSCRIPTION_MANAGER_URL: ${{ vars.SUBSCRIPTION_MANAGER_URL }}
         run: |
+          mkdir -p debug-artifacts
+
           docker run --rm \
+            -v "$PWD/debug-artifacts:/debug-artifacts" \
             -e ENVIRONMENT="${{ secrets.ENVIRONMENT }}" \
             -e SENDER_EMAIL="${{ secrets.SENDER_EMAIL }}" \
             -e SENDER_NAME="${{ secrets.SENDER_NAME }}" \
@@ -39,7 +42,17 @@ jobs:
             -e CONTACT_EMAIL="$CONTACT_EMAIL" \
             -e SUBSCRIPTION_MANAGER_URL="$SUBSCRIPTION_MANAGER_URL" \
             -e REPORT_DATE="${{ github.event.inputs.report_date }}" \
+            -e OBSERVATION_IDS_DEBUG_FILE="/debug-artifacts/observation-ids-debug.txt" \
             --memory="2g" \
             --cpus="1" \
             ghcr.io/ai-cfia/insect-project:${{ github.ref_name }} \
             observations
+
+      - name: Upload observation IDs debug artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: observation-ids-debug
+          path: debug-artifacts/observation-ids-debug.txt
+          retention-days: 1
+          if-no-files-found: ignore
