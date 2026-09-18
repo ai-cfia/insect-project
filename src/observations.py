@@ -61,7 +61,9 @@ async def get_observations(
         if id_below is not None:
             params["id_below"] = str(id_below)
 
-        return await api_instance.observations_get(**params)
+        response = await api_instance.observations_get(**params)
+        log.debug("Raw iNaturalist observations response: %s", response)
+        return response
 
 
 @log_call
@@ -116,6 +118,7 @@ async def get_all_observations(
         last_id = page.results[-1].id
         pbar.update(len(page.results))
     pbar.close()
+    log.debug("Observation IDs: %s", [o.id for o in obs])
     return obs
 
 
@@ -169,6 +172,7 @@ async def get_observation_summaries_df(
     summaries = [
         ObservationSummary.model_validate(o.model_dump()) for o in observations
     ]
+    log.debug("Summary of observations: %s", summaries)
     return transform_summaries_to_df(summaries, s.df_column_map_default)
 
 

@@ -1,5 +1,6 @@
 import logging
-from datetime import date
+import os
+from datetime import date, datetime
 
 import pandas as pd
 from pydantic import validate_call
@@ -73,12 +74,26 @@ def send_observation_report_email(
 
 @log_call
 @validate_call
-async def generate_and_send_observation_report(s: Settings):
+async def generate_and_send_observation_report(
+    s: Settings, observations_date: date | None = None
+):
     """Generate and send observation report email with ML predictions."""
     log.info("Starting observation report generation")
-    # Get list of regulated species IDs and yesterday's date
+    # Get list of regulated species IDs and report date
     regulated_taxon_ids = await get_specie_ids(s)
-    observations_date = get_yesterday()
+
+    if observations_date is None:
+        report_date_env = os.getenv("REPORT_DATE", "").strip()
+        if report_date_env:
+            try:
+                observations_date = datetime.strptime(report_date_env, "%Y-%m-%d").date()
+            except ValueError as e:
+                raise ValueError(
+                    "Invalid REPORT_DATE format. Expected YYYY-MM-DD."
+                ) from e
+        else:
+            observations_date = get_yesterday()
+
     log.info(f"Processing observations for date: {observations_date}")
 
     # Load pre-trained DenseNet model
