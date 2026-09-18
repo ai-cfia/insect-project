@@ -29,6 +29,24 @@ def _write_ids_debug_artifact(stage: str, ids: list):
         log.warning("Failed to write observation IDs debug artifact: %s", e)
 
 
+def _write_df_snapshot_artifact(stage: str, df: pd.DataFrame):
+    smtp_debug_level = os.getenv("SMTP_DEBUG_LEVEL", "0")
+    if smtp_debug_level in {"", "0"}:
+        return
+
+    base_dir = os.getenv("OBSERVATION_IDS_DEBUG_DIR")
+    if not base_dir:
+        return
+
+    try:
+        os.makedirs(base_dir, exist_ok=True)
+        safe_stage = stage.replace(":", "_").replace("/", "_")
+        out_path = os.path.join(base_dir, f"{safe_stage}.csv")
+        df.to_csv(out_path, index=False)
+    except Exception as e:
+        log.warning("Failed to write DataFrame snapshot artifact: %s", e)
+
+
 @log_call
 @validate_call(config=dict(arbitrary_types_allowed=True))
 def add_location_details_df(s: Settings, df: pd.DataFrame):
@@ -105,6 +123,7 @@ def filter_ca_us_locations(s: Settings, df: pd.DataFrame):
         if s.observation_id_column in df.columns:
             before_ids = df[s.observation_id_column].tolist()
         _write_ids_debug_artifact("filter_ca_us_locations.ids_before", before_ids)
+        _write_df_snapshot_artifact("filter_ca_us_locations.before", df)
 
     df = df.loc[df[country_column].isin({"ca", "us"})].copy()
 
@@ -119,6 +138,7 @@ def filter_ca_us_locations(s: Settings, df: pd.DataFrame):
             else None
         )
         _write_ids_debug_artifact("filter_ca_us_locations.ids_after", after_ids)
+        _write_df_snapshot_artifact("filter_ca_us_locations.after", df)
         log.debug(
             "filter_ca_us_locations: rows before=%s after=%s removed=%s country_counts_before=%s country_counts_after=%s ids_before=%s ids_after=%s",
             before_count,
@@ -190,6 +210,7 @@ def exclude_non_invasive(s: Settings, df: pd.DataFrame):
             else None
         )
         _write_ids_debug_artifact("exclude_non_invasive.ids_before", before_ids)
+        _write_df_snapshot_artifact("exclude_non_invasive.before", df)
 
     filtered_df = df[~df[s.name_alt_column].str.contains(pattern, na=False)].reset_index(
         drop=True
@@ -203,6 +224,7 @@ def exclude_non_invasive(s: Settings, df: pd.DataFrame):
             else None
         )
         _write_ids_debug_artifact("exclude_non_invasive.ids_after", after_ids)
+        _write_df_snapshot_artifact("exclude_non_invasive.after", filtered_df)
         log.debug(
             "exclude_non_invasive: rows before=%s after=%s removed=%s ids_before=%s ids_after=%s",
             before_count,
@@ -233,6 +255,7 @@ def clean_and_format_df(s: Settings, df: pd.DataFrame, columns: list[str]):
             else None
         )
         _write_ids_debug_artifact("clean_and_format_df.final_observation_ids", final_ids)
+        _write_df_snapshot_artifact("clean_and_format_df.final", df)
         log.debug(
             "clean_and_format_df: final preprocessed rows=%s final_observation_ids=%s",
             len(df),
