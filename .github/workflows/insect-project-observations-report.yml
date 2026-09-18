@@ -43,6 +43,7 @@ jobs:
             -e SUBSCRIPTION_MANAGER_URL="$SUBSCRIPTION_MANAGER_URL" \
             -e REPORT_DATE="${{ github.event.inputs.report_date }}" \
             -e OBSERVATION_IDS_DEBUG_FILE="/debug-artifacts/observation-ids-debug.txt" \
+            -e OBSERVATION_IDS_DEBUG_DIR="/debug-artifacts" \
             --memory="2g" \
             --cpus="1" \
             ghcr.io/ai-cfia/insect-project:${{ github.ref_name }} \
@@ -53,6 +54,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: observation-ids-debug
-          path: debug-artifacts/observation-ids-debug.txt
+          path: debug-artifacts
           retention-days: 1
           if-no-files-found: ignore
