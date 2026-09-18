@@ -1,6 +1,7 @@
 import argparse
 import asyncio
 import logging
+import os
 from enum import Enum
 
 from dotenv import load_dotenv
@@ -28,7 +29,10 @@ class ReportConfig(BaseModel):
 
 def setup_logging():
     """Configure logging settings"""
-    logging.basicConfig(level=logging.INFO)
+    smtp_debug_level = os.getenv("SMTP_DEBUG_LEVEL", "0")
+    app_log_level = logging.DEBUG if smtp_debug_level not in {"", "0"} else logging.INFO
+
+    logging.basicConfig(level=app_log_level)
     logging.getLogger("urllib3").setLevel(logging.WARNING)
     logging.getLogger("geopy").setLevel(logging.WARNING)
 
