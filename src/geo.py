@@ -1,4 +1,5 @@
 import logging
+import time
 
 from geopy.geocoders import Nominatim
 from pydantic import validate_call
@@ -14,6 +15,8 @@ log = logging.getLogger(__name__)
 def get_city_province_country(s: Settings, lat: float, lon: float):
     locator = Nominatim(user_agent=s.nominatim_user_agent, timeout=10)
     try:
+        log.debug("Nominatim request throttling: sleeping 1.2s")
+        time.sleep(1.2)
         location = locator.reverse((lat, lon), language="en")
         address = location.raw["address"] if location and location.raw else {}
         city = (
@@ -27,6 +30,7 @@ def get_city_province_country(s: Settings, lat: float, lon: float):
         province, country = address.get("state", ""), address.get("country_code", "")
         return city, province, country
     except Exception as e:
+        log.info(f"Reverse geocoding failed for ({lat}, {lon}): {e}")
         log.debug(f"Reverse geocoding failed for ({lat}, {lon}): {e}")
         return "", "", ""
 
