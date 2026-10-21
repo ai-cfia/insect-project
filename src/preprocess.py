@@ -105,8 +105,14 @@ def add_location_details(s: Settings, summary: ObservationSummary):
 
 @log_call
 @validate_call(config=dict(arbitrary_types_allowed=True))
-def filter_ca_us_locations(s: Settings, df: pd.DataFrame):
-    """Keep only Canadian and US locations"""
+def filter_ca_us_locations(
+    s: Settings, 
+    df: pd.DataFrame, 
+    countries: tuple[str, ...] = ("ca", "us")
+):
+    """Keep only locations whose country code is in `countries` 
+       (Canada and US by default)"""
+
     country_column = "Country"
 
     if country_column not in df.columns:
@@ -125,7 +131,7 @@ def filter_ca_us_locations(s: Settings, df: pd.DataFrame):
         _write_ids_debug_artifact("filter_ca_us_locations.ids_before", before_ids)
         _write_df_snapshot_artifact("filter_ca_us_locations.before", df)
 
-    df = df.loc[df[country_column].isin({"ca", "us"})].copy()
+    df = df.loc[df[country_column].isin(countries)].copy()
 
     after_count = len(df)
     if log.isEnabledFor(logging.DEBUG):
@@ -239,11 +245,17 @@ def exclude_non_invasive(s: Settings, df: pd.DataFrame):
 
 @log_call
 @validate_call(config=dict(arbitrary_types_allowed=True))
-def clean_and_format_df(s: Settings, df: pd.DataFrame, columns: list[str]):
+def clean_and_format_df(
+    s: Settings, 
+    df: pd.DataFrame, 
+    columns: list[str], 
+    countries: tuple[str, ...] = ("ca", "us")
+    ):
+
     """Clean and format DataFrame by removing duplicates, adding locations, filtering and sorting"""
     df = df.drop_duplicates(subset=[s.observation_id_column]).reset_index(drop=True)
     df = add_location_details_df(s, df)
-    df = filter_ca_us_locations(s, df)
+    df = filter_ca_us_locations(s, df, countries)
     df = df[columns]
     df = df.sort_values(by=[s.province_column]).reset_index(drop=True)
     df = keep_only_first_sample_image(s, df)

@@ -158,7 +158,7 @@ async def generate_and_send_observation_report(
 
     # Clean and format final Canadian dataset
     log.info("Cleaning and formatting Canadian observations")
-    ca_summaries_df = clean_and_format_df(s, ca_summaries_df, s.observation_columns_ca)
+    ca_summaries_df = clean_and_format_df(s, ca_summaries_df, s.observation_columns_ca, countries=("ca",))
 
     # Process US observations
     log.info("Processing US observations")
@@ -169,7 +169,7 @@ async def generate_and_send_observation_report(
         area=s.areas.US,
     )
     log.info(f"Retrieved {len(us_summaries_df)} US observations")
-    us_summaries_df = clean_and_format_df(s, us_summaries_df, s.observation_columns_us)
+    us_summaries_df = clean_and_format_df(s, us_summaries_df, s.observation_columns_us, countries=("us",))
 
     # Generate and send email report
     log.info("Sending observation report email")

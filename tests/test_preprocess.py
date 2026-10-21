@@ -94,6 +94,33 @@ class TestFilterNorthAmericanLocations(unittest.TestCase):
         filtered_df = filter_ca_us_locations(self.settings, df)
         pd.testing.assert_frame_equal(filtered_df, df)
 
+    def test_filter_canada_only(self):
+        df = pd.DataFrame(
+            {
+                "City": ["Ottawa", "Detroit", "Paris"],
+                "Province": ["Ontario", "Michigan", "Île-de-France"],
+                "Country": ["ca", "us", "fr"],
+            }
+        )
+        filtered_df = filter_ca_us_locations(self.settings, df, countries=("ca",))
+
+        expected_df = pd.DataFrame({"City": ["Ottawa"], "Province": ["Ontario"]})
+        pd.testing.assert_frame_equal(filtered_df, expected_df)
+
+    def test_filter_us_only(self):
+        df = pd.DataFrame(
+            {
+                "City": ["Ottawa", "Detroit", "Paris"],
+                "Province": ["Ontario", "Michigan", "Île-de-France"],
+                "Country": ["ca", "us", "fr"],
+            }
+        )
+        filtered_df = filter_ca_us_locations(self.settings, df, countries=("us",))
+
+        expected_df = pd.DataFrame({"City": ["Detroit"], "Province": ["Michigan"]})
+        pd.testing.assert_frame_equal(filtered_df, expected_df)
+
+
 
 class TestExtractFirstSampleImage(unittest.TestCase):
     def setUp(self):
@@ -420,6 +447,26 @@ class TestCleanAndFormatDF(unittest.TestCase):
 
         result = clean_and_format_df(self.s, df, self.columns)
         self.assertTrue(result.empty)
+
+    @patch("src.preprocess.get_city_province_country")
+
+    def test_clean_and_format_df_scoped_by_country(self, mock_get_location):
+        locations = [("Ottawa", "Ontario", "ca"), ("Detroit", "Michigan", "us")]
+        df = pd.DataFrame(
+            {
+                "Observation ID": [1, 2],
+                "Coordinates": [(45.4215, -75.6993), (42.3314, -83.0458)],
+                "Image URLs": [["img1.jpg"], ["img2.jpg"]],
+            }
+        )
+
+        mock_get_location.side_effect = locations
+        ca_result = clean_and_format_df(self.s, df, self.columns, countries=("ca",))
+        mock_get_location.side_effect = locations
+        us_result = clean_and_format_df(self.s, df, self.columns, countries=("us",))
+
+        self.assertEqual(ca_result["Province"].tolist(), ["Ontario"])
+        self.assertEqual(us_result["Province"].tolist(), ["Michigan"])
 
 
 class TestAddLocationDetails(unittest.TestCase):
