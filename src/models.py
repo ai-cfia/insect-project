@@ -38,7 +38,7 @@ class PredictionLabel(Enum):
 
 
 # @log_call
-@validate_call(config=dict(arbitrary_types_allowed=True))
+@validate_call(config={"arbitrary_types_allowed": True})
 def predict_invasiveness(
     s: Settings,
     image_sets: list[list[str]],
