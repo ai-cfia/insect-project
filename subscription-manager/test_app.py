@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Test suite for Email Subscription Manager
 
@@ -9,14 +8,15 @@ Tests all functionality including:
 - File operations
 """
 
-import os
 import json
-import pytest
+import os
+import shutil
 import sys
 import tempfile
-import shutil
-from unittest.mock import patch, MagicMock
 from datetime import datetime
+from unittest.mock import MagicMock, patch
+
+import pytest
 from dotenv import load_dotenv
 
 # Load environment variables from .env.example for testing
@@ -24,7 +24,13 @@ load_dotenv('.env.example')
 
 # Import the app
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from app import app, get_current_emails, create_init_emails_from_env, update_github_secrets  # noqa: E402
+from app import (
+    app,
+    create_init_emails_from_env,
+    get_current_emails,
+    update_github_secrets,
+)
+
 
 @pytest.fixture
 def client():
@@ -33,9 +39,8 @@ def client():
     app.config['SECRET_KEY'] = 'test-secret-key'
     app.config['WTF_CSRF_ENABLED'] = False
     
-    with app.test_client() as client:
-        with app.app_context():
-            yield client
+    with app.test_client() as client, app.app_context():
+        yield client
 
 @pytest.fixture
 def temp_dir():
@@ -187,8 +192,8 @@ class TestGitHubIntegration:
         
         test_emails = ['test@inspection.gc.ca']
         
-        with patch('app.encrypt_secret_for_repository', return_value='encrypted_value'):
-            with patch('builtins.open', create=True) as mock_open:
+        with patch('app.encrypt_secret_for_repository', return_value='encrypted_value'),\
+                patch('builtins.open', create=True) as mock_open:
                 mock_file = MagicMock()
                 mock_open.return_value.__enter__.return_value = mock_file
                 
@@ -213,8 +218,8 @@ class TestGitHubIntegration:
         
         test_emails = ['test@inspection.gc.ca']
         
-        with patch('app.encrypt_secret_for_repository', return_value='encrypted_value'):
-            with pytest.raises(Exception):
+        with patch('app.encrypt_secret_for_repository', return_value='encrypted_value'), \
+                pytest.raises(Exception, match = "API Error"):
                 update_github_secrets(test_emails)
 
 class TestWebInterface:

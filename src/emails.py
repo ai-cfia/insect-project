@@ -24,7 +24,7 @@ def sanitize_html_links(html: str):
 
 
 @log_call
-@validate_call(config=dict(arbitrary_types_allowed=True))
+@validate_call(config={'arbitrary_types_allowed': True})
 def render_email_body(template: Template, tables: list[EmailTable], empty_message: str):
     """Render HTML email body from template and tables"""
     html = template.render(tables=tables, empty_message=empty_message)
@@ -119,7 +119,7 @@ if __name__ == "__main__":
     else:
         try:
             template = settings.observations_email_body_template
-        except Exception as e:
+        except Exception as e: # noqa: BLE001 - fall back to simple template
             log.warning(
                 f"Could not load report template: {e}. Falling back to simple template."
             )
@@ -136,7 +136,7 @@ if __name__ == "__main__":
         try:
             send_smtp_emails(settings, recipients, args.subject, body)
             print("✅ Emails sent successfully!")
-        except Exception as e:
+        except Exception as e: # noqa: BLE001 - report any send failure to the user
             print(f"❌ Failed to send emails: {e}")
             log.error(f"Email sending failed: {e}")
     else:

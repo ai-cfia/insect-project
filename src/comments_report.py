@@ -28,7 +28,7 @@ def load_cached_data(s: Settings) -> pd.DataFrame | None:
     return None
 
 
-@validate_call(config=dict(arbitrary_types_allowed=True))
+@validate_call(config={"arbitrary_types_allowed": True})
 def save_cache(s: Settings, df: pd.DataFrame):
     """Save comments data to disk cache only in development"""
     if s.environment == AppEnvironment.DEVELOPMENT:
@@ -39,7 +39,7 @@ def save_cache(s: Settings, df: pd.DataFrame):
 
 
 @log_call
-@validate_call(config=dict(arbitrary_types_allowed=True))
+@validate_call(config={"arbitrary_types_allowed": True})
 def build_comments_email_tables(df: pd.DataFrame):
     """Create HTML tables from comments dataframe for email body"""
     log.info("Building email tables from comments data")
@@ -54,7 +54,7 @@ def build_comments_email_tables(df: pd.DataFrame):
 
 
 @log_call
-@validate_call(config=dict(arbitrary_types_allowed=True))
+@validate_call(config={"arbitrary_types_allowed": True})
 def send_flagged_comments_email(
     s: Settings,
     df_flagged_comments: pd.DataFrame,
@@ -100,9 +100,9 @@ async def generate_and_send_comments_report(s: Settings):
             )
             log.info(f"Retrieved {len(comments_df)} flagged comments")
             save_cache(s, comments_df)
-    except Exception as e:
+    except Exception:
         # Log any errors and create empty dataframe
-        log.error(f"Error generating comments report: {e}", exc_info=True)
+        log.exception("Error generating comments report")
         comments_df = pd.DataFrame()
 
     # Send email with results

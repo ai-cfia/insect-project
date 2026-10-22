@@ -194,7 +194,7 @@ class TestSplitByTaxonomy(unittest.TestCase):
         self.assertEqual(len(results), len(self.settings.upper_taxa) + 1)
 
     def test_individual_taxa_dataframes(self):
-        insecta_df, mollusca_df, plantae_df, fungi_df, others_df = group_by_taxa(
+        insecta_df, mollusca_df, plantae_df, fungi_df, _others_df = group_by_taxa(
             self.settings, self.df
         )
 

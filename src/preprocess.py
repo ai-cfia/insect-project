@@ -25,7 +25,7 @@ def _write_ids_debug_artifact(stage: str, ids: list):
     try:
         with open(artifact_path, "a", encoding="utf-8") as f:
             f.write(f"{stage}: {ids}\n")
-    except Exception as e:
+    except Exception as e: # noqa: BLE001 - debug artifact must not break the report
         log.warning("Failed to write observation IDs debug artifact: %s", e)
 
 
@@ -43,12 +43,12 @@ def _write_df_snapshot_artifact(stage: str, df: pd.DataFrame):
         safe_stage = stage.replace(":", "_").replace("/", "_")
         out_path = os.path.join(base_dir, f"{safe_stage}.csv")
         df.to_csv(out_path, index=False)
-    except Exception as e:
+    except Exception as e: # noqa: BLE001 - debug artifact must not break the report
         log.warning("Failed to write DataFrame snapshot artifact: %s", e)
 
 
 @log_call
-@validate_call(config=dict(arbitrary_types_allowed=True))
+@validate_call(config={"arbitrary_types_allowed": True})
 def add_location_details_df(s: Settings, df: pd.DataFrame):
     """Add city, province and country columns based on coordinates"""
     df[s.city_column] = ""
@@ -104,7 +104,7 @@ def add_location_details(s: Settings, summary: ObservationSummary):
 
 
 @log_call
-@validate_call(config=dict(arbitrary_types_allowed=True))
+@validate_call(config={"arbitrary_types_allowed": True})
 def filter_ca_us_locations(
     s: Settings, 
     df: pd.DataFrame, 
@@ -163,7 +163,7 @@ def filter_ca_us_locations(
 
 
 @log_call
-@validate_call(config=dict(arbitrary_types_allowed=True))
+@validate_call(config={"arbitrary_types_allowed": True})
 def keep_only_first_sample_image(s: Settings, df: pd.DataFrame):
     """Keep only first image from list of sample images"""
     if s.image_column not in df.columns:
@@ -178,7 +178,7 @@ def keep_only_first_sample_image(s: Settings, df: pd.DataFrame):
 
 
 @log_call
-@validate_call(config=dict(arbitrary_types_allowed=True))
+@validate_call(config={"arbitrary_types_allowed": True})
 def group_by_taxa(s: Settings, df_regulated: pd.DataFrame):
     """Split DataFrame into groups by taxonomic category"""
     taxa_dfs = {
@@ -199,7 +199,7 @@ def group_by_taxa(s: Settings, df_regulated: pd.DataFrame):
 
 
 @log_call
-@validate_call(config=dict(arbitrary_types_allowed=True))
+@validate_call(config={"arbitrary_types_allowed": True})
 def exclude_non_invasive(s: Settings, df: pd.DataFrame):
     """Remove non-invasive species from DataFrame"""
     excluded_species = [s.name for s in s.species_data.non_invasive if s.name]
@@ -244,7 +244,7 @@ def exclude_non_invasive(s: Settings, df: pd.DataFrame):
 
 
 @log_call
-@validate_call(config=dict(arbitrary_types_allowed=True))
+@validate_call(config={"arbitrary_types_allowed": True})
 def clean_and_format_df(
     s: Settings, 
     df: pd.DataFrame, 

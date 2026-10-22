@@ -29,7 +29,7 @@ def get_city_province_country(s: Settings, lat: float, lon: float):
         )
         province, country = address.get("state", ""), address.get("country_code", "")
         return city, province, country
-    except Exception as e:
+    except Exception as e: # noqa: BLE001 - any geocoding failure falls back to blanks
         log.info(f"Reverse geocoding failed for ({lat}, {lon}): {e}")
         log.debug(f"Reverse geocoding failed for ({lat}, {lon}): {e}")
         return "", "", ""

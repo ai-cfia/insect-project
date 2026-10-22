@@ -5,10 +5,10 @@ import uuid
 from contextlib import contextmanager
 from pathlib import Path
 
-import torchvision.transforms as transforms
 from PIL import Image
 from pydantic import HttpUrl, validate_call
 from torch import Tensor
+from torchvision import transforms
 
 from src.settings import Settings
 

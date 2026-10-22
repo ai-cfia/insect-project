@@ -1,10 +1,11 @@
-import os
 import json
+import os
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+
 import requests
-from nacl import encoding, public
 from dotenv import load_dotenv
+from flask import Flask, flash, jsonify, redirect, render_template, request, url_for
+from nacl import encoding, public
 
 load_dotenv()
 
@@ -105,7 +106,7 @@ def create_init_emails_from_env():
             
         except json.JSONDecodeError as e:
             print(f"Error parsing INITIAL_EMAILS_LIST: {e}")
-        except Exception as e:
+        except Exception as e: # noqa: BLE001 - report any file creation failure
             print(f"Error creating {init_file}: {e}")
     else:
         # Create empty init file
@@ -181,7 +182,7 @@ def subscribe():
         try:
             update_github_secrets(emails)
             flash('You have been successfully subscribed!', 'success')
-        except Exception as e:
+        except Exception as e: # noqa: BLE001 - show error to user instead of crashing
             flash('Error updating subscription. Please try again later.', 'error')
             print(f"Error updating GitHub secrets: {e}")
         
@@ -215,7 +216,7 @@ def unsubscribe():
             print(f"DEBUG: Updating GitHub secrets with {len(emails)} emails")
             update_github_secrets(emails)
             flash('You have been successfully unsubscribed.', 'success')
-        except Exception as e:
+        except Exception as e: # noqa: BLE001 - show error to user instead of crashing
             flash('Error updating subscription. Please try again later.', 'error')
             print(f"Error updating GitHub secrets: {e}")
         
